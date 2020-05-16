@@ -333,8 +333,66 @@ macro_rules! named {
         use $crate::parser::expression::*;
         Expression::MetaExpr(MetaExpr::Named(NamedExpr {
             name: $name.to_string(),
-            mexpr: MultiExpr(vec![$mexpr]),
+            expr: Box::new($mexpr),
         }))
+    }};
+}
+
+/// Add a metaexpression transf2
+#[macro_export]
+macro_rules! transf2 {
+    ($expr:expr, $t2rules:expr) => {{
+        use $crate::parser::expression::*;
+        Expression::MetaExpr(MetaExpr::Transf2(Transf2Expr {
+            mexpr: MultiExpr::new(vec![$expr]),
+            transf2_rules: $t2rules,
+        }))
+    }};
+}
+
+/// generate ReplTemplate
+#[macro_export]
+macro_rules! t2rules {
+    ($($rule:expr),* $(,)*) => {{
+        use $crate::parser::expression::*;
+        let v = vec![$($rule ,)*];
+        ReplTemplate(v)
+    }};
+}
+
+/// generate a text to replace function code
+#[macro_export]
+macro_rules! t2_funct {
+    ($e:expr) => {{
+        use $crate::parser::expression::*;
+        ReplItem::Function($e.to_string())
+    }};
+}
+
+/// generate a text to replace by name code
+#[macro_export]
+macro_rules! t2_byname {
+    ($e:expr) => {{
+        use $crate::parser::expression::*;
+        ReplItem::ByName($e.to_string())
+    }};
+}
+
+/// generate a text to replace by pos code
+#[macro_export]
+macro_rules! t2_bypos {
+    ($e:expr) => {{
+        use $crate::parser::expression::*;
+        ReplItem::ByPos($e)
+    }};
+}
+
+/// generate a text to replace plain text code
+#[macro_export]
+macro_rules! t2_text {
+    ($e:expr) => {{
+        use $crate::parser::expression::*;
+        ReplItem::Text($e.to_string())
     }};
 }
 

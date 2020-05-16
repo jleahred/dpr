@@ -42,8 +42,9 @@
 use crate::parser::{
     atom,
     atom::Atom,
-    expression::{self, Expression},
+    expression::{self, Expression, MetaExpr, MultiExpr},
 };
+use idata::IString;
 
 /// Generate a string with rust code from a ```expression::SetOfRules```
 pub fn rust_from_rules(rules: &expression::SetOfRules) -> String {
@@ -69,14 +70,56 @@ fn expr2code(expr: &Expression) -> String {
         Expression::Not(e) => format!("not!({})", expr2code(e)),
         Expression::Repeat(rep) => repeat2code(rep),
         Expression::RuleName(rname) => format!(r##"ref_rule!(r#"{}"#)"##, rname),
-        Expression::MetaExpr(me) => match me {
-            crate::parser::expression::MetaExpr::Named(crate::parser::expression::NamedExpr {
-                name,
-                mexpr,
-            }) => format!("named!(\"{}\", {})", name, mexpr2code(mexpr)),
-            _ => "".to_string(),
-        },
+        Expression::MetaExpr(me) => metaexpr2code(me),
     }
+}
+
+fn metaexpr2code(me: &MetaExpr) -> String {
+    use crate::parser::expression::MetaExpr::{Named, Transf2};
+    use crate::parser::expression::{NamedExpr, Transf2Expr};
+    match me {
+        Named(NamedExpr { name, expr }) => format!("named!(\"{}\", {})", name, expr2code(expr)),
+        Transf2(Transf2Expr {
+            mexpr,
+            transf2_rules,
+        }) => transf2code(mexpr, transf2_rules),
+    }
+}
+
+fn transf2code(expr: &MultiExpr, t2: &crate::parser::expression::ReplTemplate) -> String {
+    format!(
+        "transf2!( and!( {} ) , t2rules!({}) )",
+        mexpr2code(expr),
+        transf2templ2code(t2)
+    )
+}
+
+fn transf2templ2code(t: &crate::parser::expression::ReplTemplate) -> String {
+    use crate::parser::expression::ReplItem;
+    t.0.iter().fold("".to_string(), |acc, i| {
+        let code = match i {
+            ReplItem::Text(t) => format!(
+                // r#"crate::parser::expression::ReplItem::Text("{}".to_string()), "#,
+                r#"t2_text!("{}"), "#,
+                t
+            ),
+            ReplItem::ByPos(p) => format!(
+                // r#"crate::parser::expression::ReplItem::ByPos({}), "#, p),
+                r#"t2_bypos!("{}"), "#,
+                 p),
+            ReplItem::ByName(p) => format!(
+                // r#"crate::parser::expression::ReplItem::ByName("{}".to_string()), "#,
+                r#"t2_byname!("{}"), "#,
+                p
+            ),
+            ReplItem::Function(p) => format!(
+                // r#"crate::parser::expression::ReplItem::Function("{}".to_string()), "#,
+                r#"t2_funct!("{}"), "#,
+                p
+            ),
+        };
+        acc.iappend(&code)
+    })
 }
 
 fn mexpr2code(mexpr: &expression::MultiExpr) -> String {

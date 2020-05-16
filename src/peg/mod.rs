@@ -165,7 +165,7 @@ pub type Result = result::Result<crate::parser::expression::SetOfRules, Error>;
 /// ```
 
 pub fn rules_from_peg(peg: &str) -> Result {
-    let ast = crate::parse(peg, &rules::parse_peg())?;
+    let ast = crate::parse(peg, &rules::rules2parse_peg())?;
     let nodes = ast
         .compact()
         .prune_rules_by_name(&["_", "_1", "_eol"])
@@ -499,12 +499,12 @@ fn consume_transf_rule(
     // transf_rule     =   ( tmpl_text  /  tmpl_rule )*
     consuming_rule("transf_rule", nodes, context, |nodes, context| {
         fn rec_consume_text_or_rule(
-            template: crate::ast::replace::Template,
+            template: crate::parser::expression::ReplTemplate,
             nodes: &[crate::ast::flat::Node],
             context: Context,
         ) -> result::Result<
             (
-                crate::ast::replace::Template,
+                crate::parser::expression::ReplTemplate,
                 &[crate::ast::flat::Node],
                 Context,
             ),
@@ -529,7 +529,7 @@ fn consume_transf_rule(
         //  ------------
         use crate::parser::expression::{Expression, MetaExpr, MultiExpr, Transf2Expr};
 
-        let template = crate::ast::replace::Template(vec![]);
+        let template = crate::parser::expression::ReplTemplate(vec![]);
         let (template, nodes, context) = rec_consume_text_or_rule(template, nodes, context)?;
 
         let eov = eov
@@ -543,12 +543,12 @@ fn consume_transf_rule(
 }
 
 fn consume_tmpl_text(
-    template: crate::ast::replace::Template,
+    template: crate::parser::expression::ReplTemplate,
     nodes: &[crate::ast::flat::Node],
     context: Context,
 ) -> result::Result<
     (
-        crate::ast::replace::Template,
+        crate::parser::expression::ReplTemplate,
         &[crate::ast::flat::Node],
         Context,
     ),
@@ -558,18 +558,18 @@ fn consume_tmpl_text(
 
     consuming_rule("tmpl_text", nodes, context, |nodes, context| {
         let (text, nodes) = crate::ast::flat::consume_val(nodes)?;
-        let template = template.ipush(crate::ast::replace::Item::Text(text.to_string()));
+        let template = template.ipush(crate::parser::expression::ReplItem::Text(text.to_string()));
         Ok((template, nodes, context))
     })
 }
 
 fn consume_tmpl_rule(
-    template: crate::ast::replace::Template,
+    template: crate::parser::expression::ReplTemplate,
     nodes: &[crate::ast::flat::Node],
     context: Context,
 ) -> result::Result<
     (
-        crate::ast::replace::Template,
+        crate::parser::expression::ReplTemplate,
         &[crate::ast::flat::Node],
         Context,
     ),
@@ -587,14 +587,18 @@ fn consume_tmpl_rule(
         let (template, nodes, context) = match crate::ast::flat::peek_first_node(nodes)? {
             crate::ast::flat::Node::BeginRule(_symbol) => {
                 let (name, nodes, context) = consume_symbol(nodes, context)?;
-                let template = template.ipush(crate::ast::replace::Item::ByName(name.to_string()));
+                let template = template.ipush(crate::parser::expression::ReplItem::ByName(
+                    name.to_string(),
+                ));
                 Ok((template, nodes, context))
             }
             crate::ast::flat::Node::Val(_) => {
                 let (txt, nodes) = crate::ast::flat::consume_val(nodes)?;
                 match &txt[0..1] {
                     ":" => Ok((
-                        template.ipush(crate::ast::replace::Item::Function(txt[1..].to_string())),
+                        template.ipush(crate::parser::expression::ReplItem::Function(
+                            txt[1..].to_string(),
+                        )),
                         nodes,
                         context,
                     )),
@@ -602,7 +606,8 @@ fn consume_tmpl_rule(
                         let pos = txt[1..].parse::<usize>().map_err(|n| {
                             error_peg_s(&format!("expected number on position replace {}", n))
                         })?;
-                        let template = template.ipush(crate::ast::replace::Item::Bypos(pos));
+                        let template =
+                            template.ipush(crate::parser::expression::ReplItem::ByPos(pos));
                         Ok((template, nodes, context))
                     }
                     _ => Err(error_peg_s("")),
@@ -694,12 +699,12 @@ fn consume_and(
                 }?;
 
                 let (eov_free, nodes, context) = if let Some(named) = named {
-                    use crate::parser::expression::{Expression, MetaExpr, MultiExpr, NamedExpr};
+                    use crate::parser::expression::{Expression, MetaExpr, NamedExpr};
                     let (expr, nodes, context) = consume_rep_or_neg(nodes, context)?;
                     let eov_free =
                         eov_free.ipush(Expression::MetaExpr(MetaExpr::Named(NamedExpr {
                             name: named.to_string(),
-                            mexpr: MultiExpr(vec![expr]),
+                            expr: Box::new(expr),
                         })));
                     (eov_free, nodes, context)
                 } else {

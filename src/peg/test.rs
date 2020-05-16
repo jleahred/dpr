@@ -20,7 +20,7 @@ fn validate_peg1() {
 
     "#;
 
-    assert!(parse(peg, &peg::rules::parse_peg()).is_ok());
+    assert!(parse(peg, &peg::rules::rules2parse_peg()).is_ok());
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn validate_peg2() {
 
     "#;
 
-    assert!(parse(peg, &peg::rules::parse_peg()).is_ok());
+    assert!(parse(peg, &peg::rules::rules2parse_peg()).is_ok());
 }
 
 #[test]
@@ -57,7 +57,7 @@ fn invalid_peg1() {
 
     "#;
 
-    assert!(parse(peg, &peg::rules::parse_peg()).is_err());
+    assert!(parse(peg, &peg::rules::rules2parse_peg()).is_err());
 }
 
 #[test]
@@ -77,7 +77,7 @@ fn invalid_peg2() {
 
     "#;
 
-    assert!(parse(peg, &peg::rules::parse_peg()).is_err());
+    assert!(parse(peg, &peg::rules::rules2parse_peg()).is_err());
 }
 
 #[test]
@@ -94,7 +94,7 @@ fn validate_peg3() {
 
     "#;
 
-    assert!(parse(peg, &peg::rules::parse_peg()).is_err());
+    assert!(parse(peg, &peg::rules::rules2parse_peg()).is_err());
 }
 
 #[test]
@@ -111,7 +111,7 @@ fn validate_peg4() {
 
     "#;
 
-    assert!(parse(peg, &peg::rules::parse_peg()).is_err());
+    assert!(parse(peg, &peg::rules::rules2parse_peg()).is_err());
 }
 
 #[test]
@@ -128,7 +128,7 @@ fn validate_peg5() {
 
     "#;
 
-    assert!(parse(peg, &peg::rules::parse_peg()).is_err());
+    assert!(parse(peg, &peg::rules::rules2parse_peg()).is_err());
 }
 
 #[test]

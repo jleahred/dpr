@@ -22,7 +22,7 @@ Add to `cargo.toml`
 dpr = {git = "https://github.com/jleahred/dpr" }
 ```
 
-Watch examples below
+Wach examples below
 
 ## Modifications
 
@@ -32,8 +32,16 @@ Watch examples below
 
 ## TODO
 
+* Add IR
+* remove unnecessary code
+* document  ->
+* add trasf2  ?
+* don't neede to be multiexpr
+    pub struct Transf2Expr {
+        pub mexpr: MultiExpr,
+* remove and or multiexpr when only one option  (and/or)
 * Document readme
-* Calculator example
+  * add IR
 * Adding external functions
 * Upload to `crates`
 
@@ -584,7 +592,7 @@ In order to produce custom errors, you have to use `error(...)` constructor
 In next example, the system will complain with parenthesis error if they are unbalanced
 ```peg
     parenth         =   '('  _  expr  _  (  ')'
-                                         /  error("unbalanced parethesis: missing ')'") 
+                                         /  error("unbalanced parethesis: missing ')'")
                                          )
 ```
 
@@ -683,19 +691,19 @@ fn main() -> Result<(), dpr::Error> {
 
         expr    =   term    (
                             _  add_op   _  term     ->$(term)$(add_op)
-                            )*                              
+                            )*
 
         term    =   factor  (
                             _  mult_op  _  factor   ->$(factor)$(mult_op)
-                            )*                              
+                            )*
 
         factor  =   pow     (
                             _  pow_op   _  subexpr  ->$(subexpr)$(pow_op)
-                            )*       
+                            )*
 
         pow     =   subexpr (
                             _  pow_op   _  pow  ->$(pow)$(pow_op)
-                            )*       
+                            )*
 
         subexpr =   '(' _ expr _ ')'              ->$(expr)
                 /   number                        ->PUSH $(number)$(:endl)
@@ -703,7 +711,7 @@ fn main() -> Result<(), dpr::Error> {
                 /   '(' _ expr _      error("parenthesis unbalanced")
                 /       _ expr _ ')'  error("parenthesis unbalanced")
 
-        number  =   ([0-9]+  ('.' [0-9])?)    
+        number  =   ([0-9]+  ('.' [0-9])?)
 
         add_op  =   '+'     ->EXEC ADD$(:endl)
                 /   '-'     ->EXEC SUB$(:endl)
@@ -751,3 +759,203 @@ EXEC SUB
 PUSH 8
 EXEC ADD
 ```
+
+## Full peg grammar doc spec
+
+At the moment it's...
+
+(for an updated reference, open peg2code.rs file :-)
+
+```txt
+fn text_peg2code() -> &'static str {
+    r#"
+    /*      A peg grammar to parse peg grammars
+     *
+     */
+
+    main            =   grammar
+
+    grammar         =   rule+
+
+    symbol          =   [_a-zA-Z0-9] [_'"a-zA-Z0-9]*
+
+    rule            =   _  rule_name  _  '='  _  expr  _eol _
+    rule_name       =   '.'?  symbol  ('.' symbol)*
+
+    expr            =   or
+
+    or              =   and     ( _  '/'  _  or )?
+    error           =   'error' _  '('  _  literal  _  ')'
+
+    and             =   error
+                    /   named? rep_or_neg  transf2?  ( _1 _  !(rule_name _ ('=' / '{'))  and )?
+    _1              =   (' ' / eol)     //  this is the and separator
+
+    rep_or_neg      =   atom_or_par ('*' / '+' / '?')?
+                    /   '!' atom_or_par
+
+    atom_or_par     =   (atom / parenth)
+
+    parenth         =   '('  _  expr  _  (  ')'
+                                         /  error("unbalanced parethesis: missing ')'")
+                                         )
+
+    atom            =   literal
+                    /   match
+                    /   rule_name
+                    /   dot             //  as rule_name can start with a '.', dot has to be after rule_name
+
+    literal         =  lit_noesc  /  lit_esc
+
+    lit_noesc       =   _'   (  !_' .  )*   _'
+    _'              =   "'"
+
+    lit_esc         =   _"
+                            (   esc_char
+                            /   hex_char
+                            /   !_" .
+                            )*
+                        _"
+    _"              =   '"'
+
+    esc_char        =   '\r'
+                    /   '\n'
+                    /   '\t'
+                    /   '\\'
+                    /   '\"'
+
+    hex_char        =   '\0x' [0-9A-F] [0-9A-F]
+
+    eol             =   ("\r\n"  /  "\n"  /  "\r")
+    _eol            =   (' ' / comment)*  eol
+
+    match           =   '['
+                            (
+                                (mchars  mbetween*)
+                                / mbetween+
+                            )
+                        ']'
+
+    mchars          =   (!']' !(. '-') .)+
+    mbetween        =   (.  '-'  .)
+
+    dot             =   '.'
+
+    _               =   (  ' '
+                        /   eol
+                        /   comment
+                        )*
+
+    comment         =   line_comment
+                    /   mline_comment
+
+    line_comment    =   '//' (!eol .)*
+    mline_comment   =   '/*' (!'*/' .)* '*/'
+
+    named           =   symbol ":"
+
+    transf2         =   _1 _  '->'  ' '*  transf_rule   eol
+    transf_rule     =   ( tmpl_text  /  tmpl_rule )*
+    tmpl_text       =   (!("$(" / eol) .)+
+    tmpl_rule       =   _:"$("          //  _:  trick to avoid compactation
+                            (
+                                symbol                      //  template by name
+                                /   "."  [0-9]+             //  by pos
+                                /   ":"  (!(")" / eol) .)+  //  by function
+                            )
+                        _:")"
+    "#
+}
+```
+
+## Hacking the code
+
+As you can see, the code to start parsing the `peg` input, is written in a text `peg` file
+
+How is it possible?
+
+At the moment, the `peg parser`code is...
+
+```txt
+pub(crate) fn parse_peg() -> parser::expression::SetOfRules {
+    rules!(
+        r#"lit_noesc"# => and!(ref_rule!(r#"_'"#), rep!(and!(not!(ref_rule!(r#"_'"#)), dot!()), 0), ref_rule!(r#"_'"#))
+        , r#"tmpl_text"# => and!(rep!(and!(not!(or!(and!(lit!("$(")), and!(ref_rule!(r#"eol"#)))), dot!()), 1))
+        , r#"transf_rule"# => and!(rep!(or!(and!(ref_rule!(r#"tmpl_text"#)), and!(ref_rule!(r#"tmpl_rule"#))), 0))
+        , r#"_eol"# => and!(rep!(or!(and!(lit!(" ")), and!(ref_rule!(r#"comment"#))), 0), ref_rule!(r#"eol"#))
+        , r#"mbetween"# => and!(and!(dot!(), lit!("-"), dot!()))
+        , r#"dot"# => and!(lit!("."))
+        , r#"rep_or_neg"# => or!(and!(ref_rule!(r#"atom_or_par"#), rep!(or!(and!(lit!("*")), and!(lit!("+")), and!(lit!("?"))), 0, 1)), and!(lit!("!"), ref_rule!(r#"atom_or_par"#)))
+        , r#"eol"# => and!(or!(and!(lit!("\r\n")), and!(lit!("\n")), and!(lit!("\r"))))
+        , r#"atom"# => or!(and!(ref_rule!(r#"literal"#)), and!(ref_rule!(r#"match"#)), and!(ref_rule!(r#"rule_name"#)), and!(ref_rule!(r#"dot"#)))
+        , r#"line_comment"# => and!(lit!("//"), rep!(and!(not!(ref_rule!(r#"eol"#)), dot!()), 0))
+        , r#"match"# => and!(lit!("["), or!(and!(and!(ref_rule!(r#"mchars"#), rep!(ref_rule!(r#"mbetween"#), 0))), and!(rep!(ref_rule!(r#"mbetween"#), 1))), lit!("]"))
+        , r#"esc_char"# => or!(and!(lit!("\\r")), and!(lit!("\\n")), and!(lit!("\\t")), and!(lit!("\\\\")), and!(lit!("\\\"")))
+        , r#"_""# => and!(lit!("\""))
+        , r#"comment"# => or!(and!(ref_rule!(r#"line_comment"#)), and!(ref_rule!(r#"mline_comment"#)))
+        , r#"literal"# => or!(and!(ref_rule!(r#"lit_noesc"#)), and!(ref_rule!(r#"lit_esc"#)))
+        , r#"tmpl_rule"# => and!(named!("_", lit!("$(")), or!(and!(ref_rule!(r#"symbol"#)), and!(lit!("."), rep!(ematch!(chlist r#""#  , from '0', to '9' ), 1)), and!(lit!(":"), rep!(and!(not!(or!(and!(lit!(")")), and!(ref_rule!(r#"eol"#)))), dot!()), 1))), named!("_", lit!(")")))
+        , r#"atom_or_par"# => and!(or!(and!(ref_rule!(r#"atom"#)), and!(ref_rule!(r#"parenth"#))))
+        , r#"mchars"# => and!(rep!(and!(not!(lit!("]")), not!(and!(dot!(), lit!("-"))), dot!()), 1))
+        , r#"hex_char"# => and!(lit!("\\0x"), ematch!(chlist r#""#  , from '0', to '9' , from 'A', to 'F' ), ematch!(chlist r#""#  , from '0', to '9' , from 'A', to 'F' ))
+        , r#"or"# => and!(ref_rule!(r#"and"#), rep!(and!(ref_rule!(r#"_"#), lit!("/"), ref_rule!(r#"_"#), ref_rule!(r#"or"#)), 0, 1))
+        , r#"rule_name"# => and!(rep!(lit!("."), 0, 1), ref_rule!(r#"symbol"#), rep!(and!(lit!("."), ref_rule!(r#"symbol"#)), 0))
+        , r#"transf2"# => and!(ref_rule!(r#"_1"#), ref_rule!(r#"_"#), lit!("->"), rep!(lit!(" "), 0), ref_rule!(r#"transf_rule"#), ref_rule!(r#"eol"#))
+        , r#"parenth"# => and!(lit!("("), ref_rule!(r#"_"#), ref_rule!(r#"expr"#), ref_rule!(r#"_"#), or!(and!(lit!(")")), and!(error!("unbalanced parethesis: missing ')'"))))
+        , r#"main"# => and!(ref_rule!(r#"grammar"#))
+        , r#"mline_comment"# => and!(lit!("/*"), rep!(and!(not!(lit!("*/")), dot!()), 0), lit!("*/"))
+        , r#"_1"# => and!(or!(and!(lit!(" ")), and!(ref_rule!(r#"eol"#))))
+        , r#"_"# => and!(rep!(or!(and!(lit!(" ")), and!(ref_rule!(r#"eol"#)), and!(ref_rule!(r#"comment"#))), 0))
+        , r#"lit_esc"# => and!(ref_rule!(r#"_""#), rep!(or!(and!(ref_rule!(r#"esc_char"#)), and!(ref_rule!(r#"hex_char"#)), and!(not!(ref_rule!(r#"_""#)), dot!())), 0), ref_rule!(r#"_""#))
+        , r#"_'"# => and!(lit!("'"))
+        , r#"named"# => and!(ref_rule!(r#"symbol"#), lit!(":"))
+        , r#"grammar"# => and!(rep!(ref_rule!(r#"rule"#), 1))
+        , r#"symbol"# => and!(ematch!(chlist r#"_"#  , from 'a', to 'z' , from 'A', to 'Z' , from '0', to '9' ), rep!(ematch!(chlist r#"_'""#  , from 'a', to 'z' , from 'A', to 'Z' , from '0', to '9' ), 0))
+        , r#"rule"# => and!(ref_rule!(r#"_"#), ref_rule!(r#"rule_name"#), ref_rule!(r#"_"#), lit!("="), ref_rule!(r#"_"#), ref_rule!(r#"expr"#), ref_rule!(r#"_eol"#), ref_rule!(r#"_"#))
+        , r#"error"# => and!(lit!("error"), ref_rule!(r#"_"#), lit!("("), ref_rule!(r#"_"#), ref_rule!(r#"literal"#), ref_rule!(r#"_"#), lit!(")"))
+        , r#"and"# => or!(and!(ref_rule!(r#"error"#)), and!(rep!(ref_rule!(r#"named"#), 0, 1), ref_rule!(r#"rep_or_neg"#), rep!(ref_rule!(r#"transf2"#), 0, 1), rep!(and!(ref_rule!(r#"_1"#), ref_rule!(r#"_"#), not!(and!(ref_rule!(r#"rule_name"#), ref_rule!(r#"_"#), or!(and!(lit!("=")), and!(lit!("{"))))), ref_rule!(r#"and"#)), 0, 1)))
+        , r#"expr"# => and!(ref_rule!(r#"or"#))
+    )
+}
+```
+
+Writting it by hand, it's dificult.
+
+Then, we have a `peg` file defining the `peg` grammar accepted by this program. And we have a function to generate the `rust` code.
+
+Isn't this program desineg to receive a text `peg` grammar and an text input and produce a text output?
+
+
+### IR
+
+`IR` is from Intermediate Representation
+
+Why???
+
+Once we parse the input, we have an `AST`.
+We could process the `AST` but...
+
+The `AST` is strongly coupled to the grammar. Most of the times we modify the grammar, we will need to modify the code to process the `AST`.
+
+Some times the grammar modification will be a syntax modif, or adding some feature that requiere some syntax modification, therefore a different `AST` but all, or almost all of the concepts remain the same.
+
+Imagine if we wont to add de function `sqrt` to the math expresion compiler. We will need to modify the rules generator in order to process the new `AST`
+
+To decouple the `peg` grammar from parsing the `AST`, we will create the `IR` (Intermediate Representation)
+
+The `IR` how to get the `IR` will be defined in the own `peg` grammar as transformation rules.
+
+An interpreter of the `IR` will produce the rules in memory. Later, we can generate de `rust` code from the rules produced, or we could have a specific interpreter to generate them.
+
+To develop this feature... we need a parser, and a code generator... Hey!!! I do it. `dpr` do that!!!
+
+How to generate the `IR`
+
+```txt
+  peg_grammar()
+    .parse(peg_grammar())
+    .gen_rules()
+    .replace()
+```
+
+The `peg_grammar` will have in `transformation rules` the intructions to generate the `IR`

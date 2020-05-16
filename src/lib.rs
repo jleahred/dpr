@@ -44,6 +44,7 @@ use std::result;
 #[macro_use]
 mod macros;
 pub mod ast;
+mod ir;
 pub mod parser;
 pub mod peg;
 
@@ -68,6 +69,8 @@ pub enum Error {
     PaserErr(crate::parser::Error),
     /// error on replace
     ReplaceErr(String),
+    /// error processing IR
+    IRErr(crate::ir::Error),
 }
 
 impl<'a> Peg<'a> {

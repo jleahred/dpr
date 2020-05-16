@@ -38,7 +38,7 @@ pub fn error(desc: &str, ast_context: Option<&str>) -> Error {
 #[derive(Debug, PartialEq)]
 pub struct Transf2 {
     /// template info to replace
-    pub template: replace::Template,
+    pub template: crate::parser::expression::ReplTemplate,
     /// nodes on witch will be applied the transformation
     pub nodes: Vec<Node>,
 }

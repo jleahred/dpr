@@ -1,23 +1,23 @@
 use crate::ast::Node;
 use idata::IString;
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Item {
-    Text(String),
-    Bypos(usize),
-    ByName(String),
-    Function(String),
-}
+// #[derive(Debug, PartialEq, Clone)]
+// pub enum Item {
+//     Text(String),
+//     Bypos(usize),
+//     ByName(String),
+//     Function(String),
+// }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Template(pub(crate) Vec<Item>);
+// #[derive(Debug, PartialEq, Clone)]
+// pub struct Template(pub(crate) Vec<Item>);
 
-impl Template {
-    pub(crate) fn ipush(mut self, item: Item) -> Self {
-        self.0.push(item);
-        self
-    }
-}
+// impl Template {
+//     pub(crate) fn ipush(mut self, item: Item) -> Self {
+//         self.0.push(item);
+//         self
+//     }
+// }
 
 #[derive(Debug)]
 pub(crate) struct ReplacedNodes {
@@ -35,8 +35,6 @@ impl ReplacedNodes {
 
     fn process_node(mut self, node: &Node) -> Result<Self, String> {
         let node_replaced = replace(node)?;
-        let node = dbg!(node);
-        let node_replaced = dbg!(node_replaced);
         match node {
             Node::Named((name, _nodes)) => {
                 self.by_pos.push(node_replaced.clone());
@@ -64,8 +62,8 @@ impl Replaced {
     fn iappend(self, txt: &str) -> Self {
         Self(self.0.iappend(txt))
     }
-    pub fn str(&self) -> &str {
-        &self.0
+    pub fn str(&self) -> String {
+        self.0.to_string()
     }
 }
 
@@ -90,7 +88,7 @@ fn rec_replace_nodes(nodes: &[Node], repl: Replaced) -> Result<Replaced, String>
 
 fn rec_transf2_nodes(
     nodes: &[Node],
-    template: &Template,
+    template: &crate::parser::expression::ReplTemplate,
     repl: Replaced,
 ) -> Result<Replaced, String> {
     if nodes.len() > 0 {
@@ -104,29 +102,32 @@ fn rec_transf2_nodes(
 }
 
 fn apply_transf2(
-    template: &Template,
+    template: &crate::parser::expression::ReplTemplate,
     replaced_nodes: &ReplacedNodes,
     replaced: Replaced,
 ) -> Replaced {
+    // dbg!(template);
+    // dbg!(replaced_nodes);
     template
         .0
         .iter()
         .fold(replaced, |acc, repl_item| match repl_item {
-            Item::Text(txt) => acc.iappend(txt),
-            Item::Bypos(p) => match replaced_nodes.by_pos.get(*p) {
+            crate::parser::expression::ReplItem::Text(txt) => acc.iappend(txt),
+            crate::parser::expression::ReplItem::ByPos(p) => match replaced_nodes.by_pos.get(*p) {
                 Some(rn) => acc.iappend(&format!("pos<{}/{}>", p, rn.0)),
                 None => acc.iappend(&format!("pos<{}/missing>", p)),
             },
-            Item::ByName(n) => match replaced_nodes.by_name.get(n) {
+            crate::parser::expression::ReplItem::ByName(n) => match replaced_nodes.by_name.get(n) {
                 Some(rn) => acc.iappend(&format!("{}", rn.0)),
                 None => acc.iappend(&format!("name<{}/missing>", n)),
             },
-            Item::Function(f) => acc.iappend(replace_fn(&f)),
+            crate::parser::expression::ReplItem::Function(f) => acc.iappend(replace_fn(&f)),
         })
 }
 
 fn replace_fn(fn_name: &str) -> &str {
     match fn_name {
+        "none" => "",
         "endl" => "\n",
         "spc" => " ",
         "_" => " ",

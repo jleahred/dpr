@@ -35,7 +35,7 @@ pub enum Node {
     /// Ends a name
     EndNamed(String),
     /// Reached end of file
-    BeginTransf2(crate::ast::replace::Template),
+    BeginTransf2(crate::parser::expression::ReplTemplate),
     /// Ends a name
     EndTrasnf2,
     /// Reached end of file

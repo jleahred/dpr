@@ -30,7 +30,7 @@ pub(crate) type ResultExpr<'a> = result::Result<(Status<'a>, Vec<ast::Node>), Er
 /// Any rule has a name
 /// A rule can be registered just once
 /// The starting rule is main
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SetOfRules(pub(crate) HashMap<String, Expression>);
 
 impl SetOfRules {
@@ -38,6 +38,11 @@ impl SetOfRules {
     /// In general, is better to use the ```rules!``` macro
     pub fn new(mrules: HashMap<String, Expression>) -> Self {
         SetOfRules(mrules)
+    }
+
+    /// return a set of rules empty
+    pub fn empty() -> Self {
+        SetOfRules::new(HashMap::<String, Expression>::new())
     }
 
     /// As this is a dynamic parser, it is necessary to add rules on
@@ -111,28 +116,56 @@ pub struct Named(pub(crate) String);
 // pub struct Transf2(pub(crate) String);
 
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct NamedExpr {
     pub name: String,
-    pub mexpr: MultiExpr,
+    pub expr: Box<Expression>,
 }
 
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Transf2Expr {
     pub mexpr: MultiExpr,
-    pub transf2_rules: ast::replace::Template,
+    pub transf2_rules: ReplTemplate,
+}
+
+/// Replace item options
+#[derive(Debug, PartialEq, Clone)]
+pub enum ReplItem {
+    /// write plain text
+    Text(String),
+    /// replace from possition  ie: $(.1)
+    ByPos(usize),
+    /// replace by name ie: $(name)
+    ByName(String),
+    /// replace by function  ie: $(:endl)
+    Function(String),
+}
+
+/// template to apply the replaces
+#[derive(Debug, PartialEq, Clone)]
+pub struct ReplTemplate(pub(crate) Vec<ReplItem>);
+
+impl ReplTemplate {
+    pub(crate) fn empty() -> Self {
+        Self(vec![])
+    }
+
+    pub(crate) fn ipush(mut self, item: ReplItem) -> Self {
+        self.0.push(item);
+        self
+    }
 }
 
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MetaExpr {
     Named(NamedExpr),
     Transf2(Transf2Expr),
 }
 
 #[allow(missing_docs)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expression {
     Simple(Atom),
     And(MultiExpr),
@@ -144,7 +177,7 @@ pub enum Expression {
 }
 
 /// Opaque type to manage multiple expressions
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct MultiExpr(pub(crate) Vec<Expression>);
 
 impl MultiExpr {
@@ -152,10 +185,16 @@ impl MultiExpr {
     pub fn new(v: Vec<Expression>) -> Self {
         MultiExpr(v)
     }
+
+    /// add an expression
+    pub fn ipush(mut self, e: Expression) -> Self {
+        self.0.push(e);
+        self
+    }
 }
 
 /// Opaque type to manage repetition subexpression
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct RepInfo {
     pub(crate) expression: Box<Expression>,
     pub(crate) min: NRep,
@@ -175,7 +214,7 @@ impl RepInfo {
 }
 
 /// Number of repetitions of rule
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct NRep(pub(crate) usize);
 
 //-----------------------------------------------------------------------
@@ -198,7 +237,10 @@ pub(crate) fn parse(status: Status) -> Result {
 fn parse_rule_name<'a>(status: Status<'a>, rule_name: &str) -> Result<'a> {
     // use std::time::{Duration, Instant};
     // let start = Instant::now();
-
+    // dbg!(&status.walking_rules);
+    let (i, e) = (*(&status.pos.n), (&status.pos.n + 14));
+    // dbg!(&status.text2parse[i..e]);
+    dbg!(&status.pos.row);
     let status = if status.trace_rules {
         status.push_rule(&format!("r:{}", rule_name))
     } else {
@@ -226,6 +268,8 @@ fn parse_rule_name<'a>(status: Status<'a>, rule_name: &str) -> Result<'a> {
 }
 
 fn parse_atom_as_expr<'a>(status: Status<'a>, a: &'a Atom) -> ResultExpr<'a> {
+    // dbg!(a);
+    // dbg!(&status.text2parse[(status.pos.n)..(status.pos.n + 4)]);
     let (st, node) = atom::parse(status, a)?;
     Ok((st, vec![node]))
 }
@@ -236,9 +280,10 @@ fn parse_rule_name_as_expr<'a>(status: Status<'a>, rule_name: &str) -> ResultExp
 }
 
 fn parse_metaexpr<'a>(status: Status<'a>, meta_expr: &'a MetaExpr) -> ResultExpr<'a> {
+    // dbg!(&status.pos);
     match meta_expr {
-        MetaExpr::Named(NamedExpr { name, mexpr }) => {
-            let (status, nodes) = parse_and(status, mexpr)?;
+        MetaExpr::Named(NamedExpr { name, expr }) => {
+            let (status, nodes) = parse_expr(status, expr)?;
             Ok((status, vec![ast::Node::Named((name.to_string(), nodes))]))
         }
         MetaExpr::Transf2(Transf2Expr {
@@ -258,6 +303,7 @@ fn parse_metaexpr<'a>(status: Status<'a>, meta_expr: &'a MetaExpr) -> ResultExpr
 }
 
 fn parse_expr<'a>(status: Status<'a>, expression: &'a Expression) -> ResultExpr<'a> {
+    // dbg!(expression);
     match *expression {
         Expression::Simple(ref val) => parse_atom_as_expr(status, &val),
         Expression::And(ref val) => parse_and(status, &val),

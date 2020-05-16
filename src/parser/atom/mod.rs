@@ -16,7 +16,7 @@ mod test;
 //-----------------------------------------------------------------------
 
 /// This is a minimum expression element
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Atom {
     /// Literal string
     Literal(String),
@@ -34,7 +34,7 @@ pub enum Atom {
 /// contains a char slice and a (char,char) slice
 /// if char matches one in char slice -> OK
 /// if char matches between tuple in elems slice -> OK
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct MatchRules(pub(crate) String, pub(crate) Vec<(char, char)>);
 
 //-----------------------------------------------------------------------
@@ -89,6 +89,7 @@ macro_rules! ok {
 }
 
 fn parse_literal<'a>(mut status: Status<'a>, literal: &'a str) -> Result<'a> {
+    // dbg!(literal);
     for ch in literal.chars() {
         status = parse_char(status, ch).map_err(|st| {
             Error::from_status_normal(&st, &format!("expected literal: <{}>", literal))
