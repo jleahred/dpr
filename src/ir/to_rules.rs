@@ -45,6 +45,7 @@ fn get_expr(ir: IR) -> Result<(IR, Expression), Error> {
         "NEGATE" => get_negate(ir),
         "ERROR" => get_error(ir),
         "TRANSF2" => get_transf2(ir),
+        "PEEK" => check_peek(ir),
         other => Err(Error(format!("unknown cmd reading expression <{}>", other))),
     }
 }
@@ -74,6 +75,10 @@ fn get_transf2_item(ir: IR) -> Result<(IR, ReplItem), Error> {
             "NAMED" => {
                 let (ir, txt) = get_transf2_named(ir)?;
                 Ok((ir, ReplItem::ByName(txt)))
+            }
+            "NAMED_OPT" => {
+                let (ir, otxt) = get_transf2_named(ir)?;
+                Ok((ir, ReplItem::ByNameOpt(otxt)))
             }
             "FUNCT" => {
                 let (ir, txt) = get_transf2_named(ir)?;
@@ -124,6 +129,14 @@ fn get_negate(ir: IR) -> Result<(IR, Expression), Error> {
 
     let (ir, expr) = get_expr(ir)?;
     let expr = not!(expr);
+    Ok((ir, expr))
+}
+
+fn check_peek(ir: IR) -> Result<(IR, Expression), Error> {
+    //  <expr>
+
+    let (ir, expr) = get_expr(ir)?;
+    let expr = peek!(expr);
     Ok((ir, expr))
 }
 

@@ -68,6 +68,7 @@ fn expr2code(expr: &Expression) -> String {
         Expression::And(mexpr) => format!("and!({})", mexpr2code(mexpr)),
         Expression::Or(mexpr) => format!("or!({})", mexpr2code(mexpr)),
         Expression::Not(e) => format!("not!({})", expr2code(e)),
+        Expression::Peek(e) => format!("peek!({})", expr2code(e)),
         Expression::Repeat(rep) => repeat2code(rep),
         Expression::RuleName(rname) => format!(r##"ref_rule!(r#"{}"#)"##, rname),
         Expression::MetaExpr(me) => metaexpr2code(me),
@@ -110,6 +111,11 @@ fn transf2templ2code(t: &crate::parser::expression::ReplTemplate) -> String {
             ReplItem::ByName(p) => format!(
                 // r#"crate::parser::expression::ReplItem::ByName("{}".to_string()), "#,
                 r#"t2_byname!("{}"), "#,
+                p
+            ),
+            ReplItem::ByNameOpt(p) => format!(
+                // r#"crate::parser::expression::ReplItem::ByName("{}".to_string()), "#,
+                r#"t2_byname_opt!("{}"), "#,
                 p
             ),
             ReplItem::Function(p) => format!(

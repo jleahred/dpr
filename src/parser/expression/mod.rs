@@ -140,6 +140,8 @@ pub enum ReplItem {
     ByName(String),
     /// replace by function  ie: $(:endl)
     Function(String),
+    /// replace by name if exits ie: $(name)
+    ByNameOpt(String),
 }
 
 /// template to apply the replaces
@@ -171,6 +173,7 @@ pub enum Expression {
     And(MultiExpr),
     Or(MultiExpr),
     Not(Box<Expression>),
+    Peek(Box<Expression>),
     Repeat(RepInfo),
     RuleName(String),
     MetaExpr(MetaExpr),
@@ -309,6 +312,7 @@ fn parse_expr<'a>(status: Status<'a>, expression: &'a Expression) -> ResultExpr<
         Expression::And(ref val) => parse_and(status, &val),
         Expression::Or(ref val) => parse_or(&status, &val),
         Expression::Not(ref val) => parse_not(status, &val),
+        Expression::Peek(ref val) => parse_peek(status, &val),
         Expression::Repeat(ref val) => parse_repeat(status, &val),
         Expression::RuleName(ref val) => parse_rule_name_as_expr(status, &val),
         Expression::MetaExpr(ref val) => parse_metaexpr(status, &val),
@@ -377,6 +381,13 @@ fn parse_not<'a>(status: Status<'a>, expression: &'a Expression) -> ResultExpr<'
     match parse_expr(status.clone(), expression) {
         Ok(_) => Err(Error::from_status_normal(&status, "not")),
         Err(_) => Ok((status, vec![])),
+    }
+}
+
+fn parse_peek<'a>(status: Status<'a>, expression: &'a Expression) -> ResultExpr<'a> {
+    match parse_expr(status.clone(), expression) {
+        Ok(_) => Ok((status, vec![])),
+        Err(_) => Err(Error::from_status_normal(&status, "not")),
     }
 }
 

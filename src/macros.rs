@@ -261,6 +261,29 @@ macro_rules! not {
     }};
 }
 
+/// negate expression
+///
+/// example
+/// ```
+/// #[macro_use]  extern crate dpr;
+///
+/// fn main() {
+///     let ast = rules!{
+///        "main"   =>  and!(not!(lit!("b")), dot!())
+///     }.parse("a");
+///
+///     assert!(ast.is_ok())
+/// }
+/// ```
+///
+/// not! will not move the parsing position
+#[macro_export]
+macro_rules! peek {
+    ($e:expr) => {{
+        $crate::parser::expression::Expression::Peek(Box::new($e))
+    }};
+}
+
 /// repeat expression.
 /// You have to define minimum repetitions and optionally
 /// maximum repetitions (if missing, infinite)
@@ -375,6 +398,15 @@ macro_rules! t2_byname {
     ($e:expr) => {{
         use $crate::parser::expression::*;
         ReplItem::ByName($e.to_string())
+    }};
+}
+
+/// generate a text to replace by name optional, code
+#[macro_export]
+macro_rules! t2_byname_opt {
+    ($e:expr) => {{
+        use $crate::parser::expression::*;
+        ReplItem::ByNameOpt($e.to_string())
     }};
 }
 

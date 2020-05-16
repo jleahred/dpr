@@ -121,6 +121,12 @@ fn apply_transf2(
                 Some(rn) => acc.iappend(&format!("{}", rn.0)),
                 None => acc.iappend(&format!("name<{}/missing>", n)),
             },
+            crate::parser::expression::ReplItem::ByNameOpt(n) => {
+                match replaced_nodes.by_name.get(n) {
+                    Some(rn) => acc.iappend(&format!("{}", rn.0)),
+                    None => acc,
+                }
+            }
             crate::parser::expression::ReplItem::Function(f) => acc.iappend(replace_fn(&f)),
         })
 }

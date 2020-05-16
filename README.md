@@ -34,6 +34,7 @@ Wach examples below
 
 * Add IR
 * remove unnecessary code
+* &  peek, not consume
 * document  ->
 * add trasf2  ?
 * don't neede to be multiexpr

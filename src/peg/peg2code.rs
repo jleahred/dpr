@@ -29,19 +29,18 @@ fn text_peg2code() -> &'static str {
      */
 
     main            =   grammar                                     -> $(grammar)EOP
-
     grammar         =   rule+
 
     symbol          =   [_a-zA-Z0-9] [_'"a-zA-Z0-9]*
 
     rule            =   _  rule_name  _  '='  _  expr  _eol _       -> RULE$(:endl)$(rule_name)$(:endl)$(expr)
 
-    rule_name       =   '.'?  symbol  ('.' symbol)*
+    rule_name       =   symbol
 
     expr            =   or                              -> OR$(:endl)$(or)CLOSE_MEXPR$(:endl)
 
     or              =   _  and                          -> AND$(:endl)$(and)CLOSE_MEXPR$(:endl)
-                        (_  '/'  _  or )?               -> $(or)
+                        ( _  '/'  _  or )?              -> $(or)
 
     and             =   error
                     /   (andline  transf2   and:(
@@ -56,16 +55,18 @@ fn text_peg2code() -> &'static str {
     andline         =   andchunk  ( ' '+  ->$(:none)
                                   andchunk )*
 
-    andchunk        =   name   e:rep_or_neg                 -> NAMED$(:endl)$(name)$(:endl)$(e)
-                    /            rep_or_neg
+    andchunk        =   name   e:rep_or_unary                 -> NAMED$(:endl)$(name)$(:endl)$(e)
+                    /            rep_or_unary
                         
 
     //  this is the and separator
     _1              =   ' ' / eol                   -> $(:none)
 
-    rep_or_neg      =   atom_or_par  rep_symbol     -> $(rep_symbol)$(atom_or_par)
-                    /   atom_or_par                 -> $(atom_or_par)
+    //  repetitions or unary operator
+    rep_or_unary    =   atom_or_par  rep_symbol?    -> $(?rep_symbol)$(atom_or_par)
+                    //   atom_or_par                -> $(atom_or_par)
                     /   '!' atom_or_par             -> NEGATE$(:endl)$(atom_or_par)
+                    /   '&' atom_or_par             -> PEEK$(:endl)$(atom_or_par)
 
     rep_symbol      =   '*'     -> REPEAT$(:endl)0$(:endl)inf$(:endl)
                     /   '+'     -> REPEAT$(:endl)1$(:endl)inf$(:endl)
@@ -75,7 +76,7 @@ fn text_peg2code() -> &'static str {
 
     parenth         =   '('  _  expr  _                 -> $(expr)
                                          (  ')'         -> $(:none)
-                                         //  error("unbalanced parethesis: missing ')'")
+                                         /  error("unbalanced parethesis: missing ')'")
                                          )
 
     atom            =   a:literal             -> ATOM$(:endl)LIT$(:endl)$(a)$(:endl)
@@ -140,9 +141,9 @@ fn text_peg2code() -> &'static str {
 
     name            =   symbol ":"                         -> $(symbol)
 
-    transf2         =   _1 _  '->'  ' '*  -> $(:none)
-                        transf_rule     -> $(transf_rule)
-                        eol     -> $(:none)
+    transf2         =   _1 _  '->'  ' '*    -> $(:none)
+                        transf_rule         -> $(transf_rule)
+                        &eol
 
     transf_rule     =   ( tmpl_text  /  tmpl_rule )+
 
