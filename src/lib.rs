@@ -44,6 +44,7 @@ use std::result;
 #[macro_use]
 mod macros;
 pub mod ast;
+pub mod gcode;
 mod ir;
 pub mod parser;
 pub mod peg;
@@ -78,6 +79,7 @@ impl<'a> Peg<'a> {
     pub fn new(txt: &'a str) -> Self {
         Self(txt)
     }
+
     /// generate rules from peg grammar (fluent API)
     pub fn gen_rules(&self) -> result::Result<crate::parser::expression::SetOfRules, Error> {
         crate::peg::rules_from_peg(&self.0).map_err(|e| Error::RulesErr(e))
@@ -140,7 +142,7 @@ fn parse_with_debug(
     }
 }
 
-pub use peg::rules_from_peg;
+// pub use peg::rules_from_peg;
 
 //  A P I
 // -------------------------------------------------------------------------------------

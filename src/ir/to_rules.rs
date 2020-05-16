@@ -1,6 +1,6 @@
 use crate::ir::{Command, Error, IR};
 use crate::parser::expression::{
-    Expression, MetaExpr, MultiExpr, NRep, NamedExpr, RepInfo, ReplItem, ReplTemplate, SetOfRules,
+    Expression, MetaExpr, MultiExpr, NamedExpr, RepInfo, ReplItem, ReplTemplate, SetOfRules,
     Transf2Expr,
 };
 use idata::cont::IVec;

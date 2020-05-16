@@ -5,7 +5,7 @@
 use idata::cont::IVec;
 use std::result::Result;
 
-pub mod flat;
+// pub mod flat;
 pub(crate) mod replace;
 
 // -------------------------------------------------------------------------------------

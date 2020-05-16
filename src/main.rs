@@ -1,8 +1,8 @@
 extern crate dpr;
 
-use dpr::peg::peg2code;
+// use dpr::peg::peg2code;
 fn main() -> Result<(), dpr::Error> {
-    dpr::peg::peg2code::print_rules2parse_peg2()?;
+    dpr::gcode::peg2code::print_rules2parse_peg2()?;
     // println!("{:#?}", peg2code::peg2ir().unwrap().get_rules().unwrap());
     // println!("{:#?}", peg2code::peg2ir().unwrap().get_rules().unwrap());
     // println!("{}", peg2code::peg2rawir().unwrap());

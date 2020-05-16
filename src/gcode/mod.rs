@@ -39,6 +39,9 @@
 //!    , "bs" => rep!(lit!("b"), 1)
 //! ```
 
+pub mod peg2code;
+pub(crate) mod rules;
+
 use crate::parser::{
     atom,
     atom::Atom,

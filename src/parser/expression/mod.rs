@@ -241,7 +241,7 @@ fn parse_rule_name<'a>(status: Status<'a>, rule_name: &str) -> Result<'a> {
     // use std::time::{Duration, Instant};
     // let start = Instant::now();
     // dbg!(&status.walking_rules);
-    let (i, e) = (*(&status.pos.n), (&status.pos.n + 14));
+    // let (i, e) = (*(&status.pos.n), (&status.pos.n + 14));
     // dbg!(&status.text2parse[i..e]);
     dbg!(&status.pos.row);
     let status = if status.trace_rules {
