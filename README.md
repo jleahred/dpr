@@ -35,7 +35,7 @@ Wach examples below
 * Add IR
 * remove unnecessary code
 * &  peek, not consume
-* document  ->
+* document  ->, peek
 * add trasf2  ?
 * don't neede to be multiexpr
     pub(crate)struct Transf2Expr {

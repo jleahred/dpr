@@ -24,17 +24,15 @@ fn main() -> Result<(), dpr::Error> {
                             )*
 
         pow     =   subexpr (
-                            _  pow_op   _  pow      ->$(pow)$(pow_op)
+                            _  pow_op   _  pow  ->$(pow)$(pow_op)
                             )*
 
-        subexpr =   (
-                        '(' _ expr _ 
-                         ( ')'
-                         /  error("parenthesis unbalanced")
-                         )
-                    )                   ->$(expr)
+        subexpr =   '(' _ expr _                    ->$(expr)
+                                (  ')'              ->$(:none)
+                                /  error("parenthesis error")
+                        )
                 /   number                        ->PUSH $(number)$(:endl)
-                /   '-' _ subexpr                 ->PUSH 0$(:endl)$(subexpr)EXEC SUB$(:endl)
+                /   '-' _ subexpr                 ->PUSH 0$(:endl)$(subexpr)SUB$(:endl)
 
         number  =   ([0-9]+  ('.' [0-9])?)
 

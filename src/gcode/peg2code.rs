@@ -33,14 +33,18 @@ pub(crate) fn text_peg2code() -> &'static str {
                     /   (andline  transf2   and:(
                             _                ->$(:none)
                             !(rule_name   _  ('=' / '{'))   and )?)             -> TRANSF2$(:endl)$(transf2)EOTRANSF2$(:endl)AND$(:endl)$(andline)CLOSE_MEXPR$(:endl)$(and)
-                    /   andline            ( (  (' ' / comment)*   eol+   _)    -> $(:none)
-                                                    !(rule_name _   ('=' / '{'))   and )?
+                    /   andline     (  
+                                       ( ' ' / comment )*   eol+   _            -> $(:none)
+                                       !( rule_name _   ('=' / '{') )   and 
+                                    )?
 
     error           =   'error' _  '('  _  literal  _  ')'      -> ERROR$(:endl)$(literal)$(:endl)
 
 
-    andline         =   andchunk  ( ' '+  ->$(:none)
-                                  andchunk )*
+    andline         =   andchunk  (     
+                                        ' '+  ->$(:none)
+                                        ( error / andchunk )
+                                  )*
 
     andchunk        =   name   e:rep_or_unary                 -> NAMED$(:endl)$(name)$(:endl)$(e)
                     /            rep_or_unary
