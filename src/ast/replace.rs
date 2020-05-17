@@ -1,24 +1,6 @@
 use crate::ast::Node;
 use idata::IString;
 
-// #[derive(Debug, PartialEq, Clone)]
-// pub enum Item {
-//     Text(String),
-//     Bypos(usize),
-//     ByName(String),
-//     Function(String),
-// }
-
-// #[derive(Debug, PartialEq, Clone)]
-// pub struct Template(pub(crate) Vec<Item>);
-
-// impl Template {
-//     pub(crate) fn ipush(mut self, item: Item) -> Self {
-//         self.0.push(item);
-//         self
-//     }
-// }
-
 #[derive(Debug)]
 pub(crate) struct ReplacedNodes {
     by_pos: Vec<Replaced>,
@@ -106,8 +88,6 @@ fn apply_transf2(
     replaced_nodes: &ReplacedNodes,
     replaced: Replaced,
 ) -> Replaced {
-    // dbg!(template);
-    // dbg!(replaced_nodes);
     template
         .0
         .iter()

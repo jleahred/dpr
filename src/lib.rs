@@ -8,26 +8,6 @@
 //!
 //! A very basic example...
 //! ```rust
-//! extern crate dpr;
-//!
-//! fn main() -> Result<(), dpr::Error> {
-//!     let result = dpr::Peg::new(
-//!         "
-//!         main    =   char+
-//!         char    =   'a'     -> A
-//!                 /   'b'     -> B
-//!                 /   .
-//!     ",
-//!     )
-//!     .gen_rules()?
-//!     .parse("aaacbbabdef")?
-//!     .replace()?
-//!     //  ...
-//!     ;
-//!
-//!     assert_eq!(result, "AAAcBBABdef");
-//!     Ok(())
-//! }
 //!```
 //!
 //!
@@ -42,12 +22,12 @@ extern crate im;
 use std::result;
 
 #[macro_use]
-mod macros;
-pub mod ast;
-pub mod gcode;
-mod ir;
-pub mod parser;
-pub mod peg;
+pub(crate) mod macros;
+pub(crate) mod ast;
+pub(crate) mod gcode;
+pub(crate) mod ir;
+pub(crate) mod parser;
+pub(crate) mod rules_for_peg;
 
 // -------------------------------------------------------------------------------------
 //  T Y P E S
@@ -64,8 +44,6 @@ pub struct Peg<'a>(&'a str);
 /// Errors for fluent API
 #[derive(Debug)]
 pub enum Error {
-    /// error on generating rules
-    RulesErr(crate::peg::Error),
     /// error on parsing
     PaserErr(crate::parser::Error),
     /// error on replace
@@ -82,7 +60,12 @@ impl<'a> Peg<'a> {
 
     /// generate rules from peg grammar (fluent API)
     pub fn gen_rules(&self) -> result::Result<crate::parser::expression::SetOfRules, Error> {
-        crate::peg::rules_from_peg(&self.0).map_err(|e| Error::RulesErr(e))
+        use crate::ir::IR;
+
+        let irtxt = crate::rules_for_peg::rules().parse(self.0)?.replace()?;
+        let ir = IR::new(&irtxt.str());
+
+        Ok(ir.get_rules().unwrap())
     }
 }
 
@@ -98,6 +81,28 @@ impl crate::parser::expression::SetOfRules {
     }
 }
 
+/// A parser for the parser.
+///
+/// It will take the peg grammar to parse peg grammars
+/// and will generate the rust code as a set of rules
+pub fn print_rules2parse_peg2() {
+    use crate::ir::IR;
+
+    let irtxt = crate::rules_for_peg::rules()
+        .parse(gcode::peg2code::text_peg2code())
+        .unwrap()
+        .replace()
+        .unwrap();
+    let ir = IR::new(&irtxt.str());
+
+    let rules = ir.get_rules().unwrap();
+
+    let r = crate::gcode::rust_from_rules(&rules);
+
+    let r = r;
+    println!("{}", r);
+}
+
 impl ast::Node {
     /// run the tree replacing acording the rules
     pub fn replace(&self) -> Result<crate::ast::replace::Replaced, Error> {
@@ -109,7 +114,6 @@ impl ast::Node {
 // -------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------------------
-//  A P I
 
 fn parse(s: &str, rules: &parser::expression::SetOfRules) -> Result<ast::Node, parser::Error> {
     parse_with_debug(s, rules, false)
@@ -142,7 +146,4 @@ fn parse_with_debug(
     }
 }
 
-// pub use peg::rules_from_peg;
-
-//  A P I
 // -------------------------------------------------------------------------------------

@@ -15,8 +15,8 @@ use std::result;
 //-----------------------------------------------------------------------
 
 /// Support for minimum expressions elements
-pub mod atom;
-pub mod expression;
+pub(crate) mod atom;
+pub(crate) mod expression;
 
 use std::str::Chars;
 
@@ -30,15 +30,15 @@ use std::str::Chars;
 
 /// Information about the possition on parsing
 #[derive(PartialEq, Clone, Debug)]
-pub struct Possition {
+pub(crate) struct Possition {
     /// char position parsing
-    pub n: usize,
+    pub(crate) n: usize,
     /// row parsing row
-    pub row: usize,
+    pub(crate) row: usize,
     /// parsing col
-    pub col: usize,
+    pub(crate) col: usize,
     /// possition were line started for current pos *m*
-    pub start_line: usize,
+    pub(crate) start_line: usize,
 }
 
 impl Possition {
@@ -54,7 +54,7 @@ impl Possition {
 
 /// Error priority
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Eq, Ord)]
-pub enum ErrPriority {
+pub(crate) enum ErrPriority {
     /// normal error
     Normal,
     /// Very important error
@@ -65,20 +65,20 @@ pub enum ErrPriority {
 #[derive(Debug, Clone)]
 pub struct Error {
     /// Possition achive parsing
-    pub pos: Possition,
+    pub(crate) pos: Possition,
     /// Error description parsing
-    pub descr: String,
+    pub(crate) descr: String,
     /// Line content before where error was produced
-    pub line_before: String,
+    pub(crate) line_before: String,
     /// Line content after where error was produced
-    pub line_after: String,
+    pub(crate) line_after: String,
     // Suberrors when parsing an *or* (it could be removed!)
-    // pub errors: Vec<Error>,
+    // pub(crate)errors: Vec<Error>,
     /// Rules path followed till got the error
     /// Only available if trace_rules is on
-    pub parsing_rules: Vec<String>,
+    pub(crate) parsing_rules: Vec<String>,
     /// error priority
-    pub priority: ErrPriority,
+    pub(crate) priority: ErrPriority,
 }
 
 //-----------------------------------------------------------------------

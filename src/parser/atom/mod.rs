@@ -17,7 +17,7 @@ mod test;
 
 /// This is a minimum expression element
 #[derive(Debug, PartialEq)]
-pub enum Atom {
+pub(crate) enum Atom {
     /// Literal string
     Literal(String),
     /// Character matches a list of chars or a list of ranges
@@ -35,7 +35,7 @@ pub enum Atom {
 /// if char matches one in char slice -> OK
 /// if char matches between tuple in elems slice -> OK
 #[derive(Debug, PartialEq)]
-pub struct MatchRules(pub(crate) String, pub(crate) Vec<(char, char)>);
+pub(crate) struct MatchRules(pub(crate) String, pub(crate) Vec<(char, char)>);
 
 //-----------------------------------------------------------------------
 //-----------------------------------------------------------------------
@@ -57,7 +57,7 @@ pub(crate) fn parse<'a>(status: Status<'a>, atom: &'a Atom) -> Result<'a> {
 
 impl MatchRules {
     /// Create a MatchRules instance based on string and bounds
-    pub fn init(s: &str, bounds: Vec<(char, char)>) -> Self {
+    pub(crate) fn init(s: &str, bounds: Vec<(char, char)>) -> Self {
         MatchRules(s.to_string(), bounds)
     }
     #[allow(dead_code)] //  used in tests
@@ -89,7 +89,6 @@ macro_rules! ok {
 }
 
 fn parse_literal<'a>(mut status: Status<'a>, literal: &'a str) -> Result<'a> {
-    // dbg!(literal);
     for ch in literal.chars() {
         status = parse_char(status, ch).map_err(|st| {
             Error::from_status_normal(&st, &format!("expected literal: <{}>", literal))

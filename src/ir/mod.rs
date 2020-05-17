@@ -6,7 +6,7 @@ pub struct Error(pub(crate) String);
 
 #[derive(Debug)]
 /// IR error information
-pub struct IR {
+pub(crate) struct IR {
     pos: usize,
     commands: Vec<Command>,
 }
@@ -26,7 +26,6 @@ impl IR {
     }
 
     fn get(mut self) -> Result<(IR, Command), Error> {
-        // dbg!(self.commands[self.pos].clone());
         if self.pos >= self.commands.len() {
             Err(Error("next over finished program".to_string()))
         } else {

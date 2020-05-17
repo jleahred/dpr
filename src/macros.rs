@@ -1,29 +1,6 @@
 // -------------------------------------------------------------------------------------
 //  M A C R O S
 
-/// Create a map of rules
-///
-/// example
-/// ```
-///#[macro_use]
-///extern crate dpr;
-///
-///fn main() {
-///    let ast = rules! {
-///       "main"   =>  and!{
-///                        lit!("aa"),
-///                        ref_rule!("rule2")
-///                    },
-///       "rule2"  =>  and!{
-///                        lit!("b"),
-///                        lit!("c")
-///                    }
-///    }
-///    .parse("aabc");
-///    assert!(ast.is_ok())
-///}
-/// ```
-#[macro_export]
 #[cfg_attr(feature = "cargo-clippy", allow(clippy::let_and_return))]
 macro_rules! rules {
     ($($n:expr => $e:expr),*) => {{
@@ -36,21 +13,6 @@ macro_rules! rules {
     }};
 }
 
-/// Create a literal
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  lit!("aa")
-///     }.parse("aa");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-#[macro_export]
 macro_rules! lit {
     ($e:expr) => {{
         $crate::parser::expression::Expression::Simple($crate::parser::atom::Atom::Literal(
@@ -59,45 +21,6 @@ macro_rules! lit {
     }};
 }
 
-/// Generate an error
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  error!("aa")
-///     }.parse("aa");
-///
-///     assert!(ast.is_err())
-/// }
-/// ```
-///
-/// ```rust
-/// extern crate dpr;
-/// use dpr::rules_from_peg;
-/// fn main() {
-///     let ast = rules_from_peg(
-///         r#"
-///
-///      main    =   '('  main   ( ')'  /  error("unbalanced parenthesis") )
-///              /   'hello'
-///
-///          "#,
-///     )
-///     .unwrap()
-///     .parse("((hello)");
-///
-///     match ast {
-///         Ok(_) => panic!("It should fail"),
-///         Err(dpr::Error::PaserErr(e)) => assert!(e.descr == "unbalanced parenthesis"),
-///         _ => panic!("unspected errro"),
-///     }
-/// }
-/// ```
-
-#[macro_export]
 macro_rules! error {
     ($e:expr) => {{
         $crate::parser::expression::Expression::Simple($crate::parser::atom::Atom::Error(
@@ -106,72 +29,12 @@ macro_rules! error {
     }};
 }
 
-/// Atom::Dot (any character)
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  and!(dot!(), dot!())
-///     }.parse("aa");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-#[macro_export]
 macro_rules! dot {
     () => {{
         $crate::parser::expression::Expression::Simple($crate::parser::atom::Atom::Dot)
     }};
 }
 
-/// Generate a match expression with optional characters and a list
-/// of bounds
-///
-///  "String", from 'a', to 'b', from 'c', to 'd'
-/// The first string, is a set of chars.
-/// Later you can write a list of tuples with ranges to validate
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  rep!(ematch!(    chlist "cd",
-///                                         from 'a', to 'b',
-///                                         from 'j', to 'p'
-///                     ), 0)
-///     }.parse("aabcdj");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-///
-///
-/// You can also pass a list of chars and a vector of char bounds as next
-/// example
-///
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  rep!(ematch!(    chlist "cd",
-///                                      from2   vec![
-///                                             ('a', 'b'),
-///                                             ('j', 'p')
-///                                         ]
-///                     ), 0)
-///     }.parse("aabcdj");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-
-#[macro_export]
 macro_rules! ematch {
     (chlist $chars:expr, $(from $from:expr,  to $to:expr),*) => {{
         //use idata::cont::IVec;  //  pending macros by example 2.0
@@ -192,21 +55,6 @@ macro_rules! ematch {
     }};
 }
 
-/// Concat expressions (and)
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  and!(dot!(), dot!())
-///     }.parse("aa");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-#[macro_export]
 macro_rules! and {
     ($($e:expr),*) => {{
         use $crate::parser::expression::{Expression, MultiExpr};
@@ -215,21 +63,6 @@ macro_rules! and {
     }};
 }
 
-/// Choose expressions (or)
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  or!(lit!("z"), lit!("a"))
-///     }.parse("a");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-#[macro_export]
 macro_rules! or {
     ($($e:expr),*) => {{
         use $crate::parser::expression::{Expression, MultiExpr};
@@ -238,82 +71,18 @@ macro_rules! or {
     }};
 }
 
-/// negate expression
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  and!(not!(lit!("b")), dot!())
-///     }.parse("a");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-///
-/// not! will not move the parsing position
-#[macro_export]
 macro_rules! not {
     ($e:expr) => {{
         $crate::parser::expression::Expression::Not(Box::new($e))
     }};
 }
 
-/// negate expression
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  and!(not!(lit!("b")), dot!())
-///     }.parse("a");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-///
-/// not! will not move the parsing position
-#[macro_export]
 macro_rules! peek {
     ($e:expr) => {{
         $crate::parser::expression::Expression::Peek(Box::new($e))
     }};
 }
 
-/// repeat expression.
-/// You have to define minimum repetitions and optionally
-/// maximum repetitions (if missing, infinite)
-///
-/// example
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  rep!(lit!("a"), 0)
-///     }.parse("aaaaaaaa");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-/// repeating from 0 to infinite
-///
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main"   =>  rep!(lit!("a"), 0, 3)
-///     }.parse("aaa");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-#[macro_export]
 macro_rules! rep {
     ($e:expr, $min:expr) => {{
         use $crate::parser::expression;
@@ -328,29 +97,12 @@ macro_rules! rep {
     }};
 }
 
-/// This will create a subexpression referring to a "rule name"
-///
-/// ```
-/// #[macro_use]  extern crate dpr;
-///
-/// fn main() {
-///     let ast = rules!{
-///        "main" => ref_rule!("3a"),
-///        "3a"   => lit!("aaa")
-///     }.parse("aaa");
-///
-///     assert!(ast.is_ok())
-/// }
-/// ```
-#[macro_export]
 macro_rules! ref_rule {
     ($e:expr) => {{
         $crate::parser::expression::Expression::RuleName($e.to_owned())
     }};
 }
 
-/// Add a metaexpression named
-#[macro_export]
 macro_rules! named {
     ($name:expr, $mexpr:expr) => {{
         use $crate::parser::expression::*;
@@ -361,8 +113,6 @@ macro_rules! named {
     }};
 }
 
-/// Add a metaexpression transf2
-#[macro_export]
 macro_rules! transf2 {
     ($expr:expr, $t2rules:expr) => {{
         use $crate::parser::expression::*;
@@ -373,8 +123,6 @@ macro_rules! transf2 {
     }};
 }
 
-/// generate ReplTemplate
-#[macro_export]
 macro_rules! t2rules {
     ($($rule:expr),* $(,)*) => {{
         use $crate::parser::expression::*;
@@ -383,8 +131,6 @@ macro_rules! t2rules {
     }};
 }
 
-/// generate a text to replace function code
-#[macro_export]
 macro_rules! t2_funct {
     ($e:expr) => {{
         use $crate::parser::expression::*;
@@ -392,8 +138,6 @@ macro_rules! t2_funct {
     }};
 }
 
-/// generate a text to replace by name code
-#[macro_export]
 macro_rules! t2_byname {
     ($e:expr) => {{
         use $crate::parser::expression::*;
@@ -401,8 +145,6 @@ macro_rules! t2_byname {
     }};
 }
 
-/// generate a text to replace by name optional, code
-#[macro_export]
 macro_rules! t2_byname_opt {
     ($e:expr) => {{
         use $crate::parser::expression::*;
@@ -410,17 +152,13 @@ macro_rules! t2_byname_opt {
     }};
 }
 
-/// generate a text to replace by pos code
-#[macro_export]
-macro_rules! t2_bypos {
-    ($e:expr) => {{
-        use $crate::parser::expression::*;
-        ReplItem::ByPos($e)
-    }};
-}
+// macro_rules! t2_bypos {
+//     ($e:expr) => {{
+//         use $crate::parser::expression::*;
+//         ReplItem::ByPos($e)
+//     }};
+// }
 
-/// generate a text to replace plain text code
-#[macro_export]
 macro_rules! t2_text {
     ($e:expr) => {{
         use $crate::parser::expression::*;

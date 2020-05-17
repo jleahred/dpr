@@ -8,20 +8,8 @@
 //!
 //! To generate the code to parse the peg, you just have to run...
 //!
-//! ```
-//! extern crate dpr;
-//! use dpr::peg::peg2code;
-//!
-//! fn main() {
-//!     peg2code::print_rules2parse_peg();
-//! }
-//! ```
-//!
-//! And the result, has to be pasted in peg::rules.rs
-//!
 
-use crate::ir::IR;
-fn text_peg2code() -> &'static str {
+pub(crate) fn text_peg2code() -> &'static str {
     r#"
     /*      A peg grammar to parse peg grammars
      *
@@ -164,93 +152,3 @@ fn text_peg2code() -> &'static str {
 
     "#
 }
-
-/// A parser for the parser.
-///
-/// It will take the peg grammar to parse peg grammars
-///
-// pub fn print_rules2parse_, crate::rules_from_peg}peg() {
-//     let rules = rules_from_peg(text_peg2code())
-//         .map_err(|e| {
-//             println!("{}", e);
-//             panic!("FAIL");
-//         })
-//         .unwrap();
-
-//     println!("{}", peg::gcode::rust_from_rules(&rules))
-// }
-
-/// A parser for the parser.
-///
-/// It will take the peg grammar to parse peg grammars
-/// and will generate the rust code with rules
-pub fn print_rules2parse_peg2() -> Result<(), crate::Error> {
-    // let irtxt = crate::Peg::new(text_peg2code())
-    //     .gen_rules()?
-    //     .parse(text_peg2code())
-    //     .unwrap()
-    //     .replace()
-    //     .unwrap();
-
-    // let txt = "  main  =  a b  -> $(a)b
-
-    //     a = 'a'
-    //     b = 'b'
-    // ";
-    // let irtxt = crate::peg::rules::rules2parse_peg_new()
-    //     // .parse(text_peg2code())
-    //     .parse(txt)
-    //     .unwrap()
-    //     .replace();
-    // dbg!(irtxt);
-    // panic!();
-
-    let irtxt = crate::gcode::rules::rules2parse_peg()
-        .parse(text_peg2code())
-        // .parse(txt)
-        .unwrap()
-        .replace()
-        .unwrap();
-    let irtxt = dbg!(irtxt);
-    let ir = IR::new(&irtxt.str());
-
-    let rules = ir.get_rules().unwrap();
-
-    let r = crate::gcode::rust_from_rules(&rules);
-
-    let r = r;
-    println!("{}", r);
-    Ok(())
-}
-
-//  get the IR representacion of peg grammar
-// pub fn peg2ir() -> Result<IR, crate::Error> {
-//     // let ir =
-//     // //crate::peg::rules::rules2parse_peg()
-//     // rules_from_peg(text_peg2code()).map_err(|e| {
-//     //     println!("{}", e);
-//     //     panic!("FAIL");
-//     // })?
-//     //     .parse(text_peg2code())?
-//     //     .replace()?
-//     //     .str();
-//     let ir = IR::new(&peg2rawir()?);
-//     Ok(ir)
-// }
-
-// pub fn peg2rawir() -> Result<String, crate::Error> {
-//     let raw =
-//     //crate::peg::rules::rules2parse_peg()
-//     rules_from_peg(text_peg2code()).map_err(|e| {
-//         println!("{}", e);
-//         panic!("FAIL");
-//     })?
-//         .parse(text_peg2code())?
-//         .replace()?
-//         .str();
-//     Ok(raw)
-// }
-
-// pub fn peg2rust() -> Result<crate::parser::expression::SetOfRules, crate::Error> {
-//     Ok(peg2ir()?.get_rules().map_err(|e| crate::Error::IRErr(e))?)
-// }

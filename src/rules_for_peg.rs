@@ -4,10 +4,8 @@
 
 use crate::parser;
 
-pub(crate) fn rules2parse_peg() -> parser::expression::SetOfRules {
+pub(crate) fn rules() -> parser::expression::SetOfRules {
     rules!(
-        //    r#"lit_noesc"# => and!(ref_rule!(r#"_'"#), rep!(and!(not!(ref_rule!(r#"_'"#)), dot!()), 0), ref_rule!(r#"_'"#))
-
         r#"line_comment"# => or!(and!(lit!("//"), rep!(or!(and!(not!(ref_rule!(r#"eol"#)), dot!())), 0)))
         , r#"transf2"# => or!(and!(transf2!( and!( and!(ref_rule!(r#"_1"#), ref_rule!(r#"_"#), lit!("->"), rep!(lit!(" "), 0)) ) , t2rules!(t2_funct!("none"), ) ), transf2!( and!( and!(ref_rule!(r#"transf_rule"#)) ) , t2rules!(t2_byname!("transf_rule"), ) ), peek!(ref_rule!(r#"eol"#))))
         , r#"_"# => or!(and!(transf2!( and!( and!(or!(and!(rep!(or!(and!(lit!(" ")), and!(ref_rule!(r#"eol"#)), and!(ref_rule!(r#"comment"#))), 0)))) ) , t2rules!(t2_funct!("none"), ) )))

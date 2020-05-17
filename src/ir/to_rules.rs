@@ -7,14 +7,13 @@ use idata::cont::IVec;
 
 impl IR {
     /// get rules from an IR code
-    pub fn get_rules(self) -> Result<SetOfRules, Error> {
+    pub(crate) fn get_rules(self) -> Result<SetOfRules, Error> {
         let (_ir, rules) = get_rule_rec(self, SetOfRules::empty())?;
         Ok(rules)
     }
 }
 
 fn get_rule_rec(ir: IR, rules: SetOfRules) -> Result<(IR, SetOfRules), Error> {
-    // dbg!(ir.peek());
     if ir.peek() == Some(Command("EOP".to_string())) {
         Ok((ir, rules))
     } else {
@@ -288,20 +287,4 @@ fn get_rule(ir: IR) -> Result<(IR, SetOfRules), Error> {
     let (ir, expr) = get_expr(ir)?;
 
     Ok((ir, rules! { &name.0 => expr }))
-}
-
-#[test]
-fn test_get_rules_simple() {
-    let rules = IR::new(
-        "RULE
-name
-ATOM
-LIT
-literal
-EOF",
-    )
-    .get_rules()
-    .unwrap();
-
-    assert_eq!(rules, rules! { "name" => lit!("literal")})
 }

@@ -38,8 +38,8 @@ Wach examples below
 * document  ->
 * add trasf2  ?
 * don't neede to be multiexpr
-    pub struct Transf2Expr {
-        pub mexpr: MultiExpr,
+    pub(crate)struct Transf2Expr {
+        pub(crate)mexpr: MultiExpr,
 * remove and or multiexpr when only one option  (and/or)
 * Document readme
   * add IR
