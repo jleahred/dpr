@@ -79,6 +79,10 @@ fn get_transf2_item(ir: IR) -> Result<(IR, ReplItem), Error> {
                 let (ir, otxt) = get_transf2_named(ir)?;
                 Ok((ir, ReplItem::ByNameOpt(otxt)))
             }
+            "POS" => {
+                let (ir, pos) = get_transf2_pos(ir)?;
+                Ok((ir, ReplItem::ByPos(pos)))
+            }
             "FUNCT" => {
                 let (ir, txt) = get_transf2_named(ir)?;
                 Ok((ir, ReplItem::Function(txt)))
@@ -107,6 +111,18 @@ fn get_transf2_named(ir: IR) -> Result<(IR, String), Error> {
     let (ir, _) = ir.get()?;
     let (ir, named) = ir.get()?;
     Ok((ir, named.0))
+}
+
+fn get_transf2_pos(ir: IR) -> Result<(IR, usize), Error> {
+    let (ir, _) = ir.get()?;
+    let (ir, str_pos) = ir.get()?;
+    let pos = str_pos.0.parse().or_else(|e| {
+        Err(Error(format!(
+            "Failed reading pos transformation... {:?} ",
+            e
+        )))
+    })?;
+    Ok((ir, pos))
 }
 
 fn get_transf2_text(ir: IR) -> Result<(IR, String), Error> {
@@ -145,7 +161,7 @@ fn get_named(ir: IR) -> Result<(IR, Expression), Error> {
 
     let (ir, n) = ir.get()?;
     let (ir, expr) = get_expr(ir)?;
-    let expr = crate::parser::expression::Expression::MetaExpr(MetaExpr::Named(NamedExpr {
+    let expr = Expression::MetaExpr(MetaExpr::Named(NamedExpr {
         name: n.0,
         expr: Box::new(expr),
     }));
@@ -165,7 +181,7 @@ fn get_match(ir: IR) -> Result<(IR, Expression), Error> {
     let (ir, between) = get_match_between(ir)?;
     let amatch =
         crate::parser::atom::Atom::Match(crate::parser::atom::MatchRules::init(&chars, between));
-    let expr = crate::parser::expression::Expression::Simple(amatch);
+    let expr = Expression::Simple(amatch);
     Ok((ir, expr))
 }
 
@@ -258,6 +274,7 @@ fn get_atom(ir: IR) -> Result<(IR, Expression), Error> {
         "LIT" => get_lit(ir),
         "RULREF" => get_rulref(ir),
         "DOT" => Ok((ir, dot!())),
+        "EOF" => Ok((ir, eof!())),
         other => Err(Error(format!("unknown cmd reading atom <{}>", other))),
     }
 }

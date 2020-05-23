@@ -8,6 +8,27 @@
 //!
 //! A very basic example...
 //! ```rust
+//! extern crate dpr;
+//!
+//! fn main() -> Result<(), dpr::Error> {
+//!     let result = dpr::Peg::new(
+//!         "
+//!         main    =   char+
+//!         char    =   'a'     -> A
+//!                 /   'b'     -> B
+//!                 /   .
+//!     ",
+//!     )
+//!     .gen_rules()?
+//!     .parse("aaacbbabdef")?
+//!     .replace()?
+//!     //  ...
+//!     ;
+//!
+//!     println!("{:#?}", result);
+//!     Ok(())
+//! }
+//!
 //!```
 //!
 //!
@@ -85,6 +106,14 @@ impl crate::parser::expression::SetOfRules {
 ///
 /// It will take the peg grammar to parse peg grammars
 /// and will generate the rust code as a set of rules
+/// ```rust
+/// extern crate dpr;
+///
+/// fn main() {
+///     dpr::print_rules2parse_peg2();
+/// }
+/// ```
+
 pub fn print_rules2parse_peg2() {
     use crate::ir::IR;
 

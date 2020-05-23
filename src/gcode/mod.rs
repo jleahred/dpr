@@ -5,7 +5,7 @@ pub(crate) mod peg2code;
 use crate::parser::{
     atom,
     atom::Atom,
-    expression::{self, Expression, MetaExpr, MultiExpr},
+    expression::{self, Expression, MetaExpr, MultiExpr, ReplTemplate},
 };
 use idata::IString;
 
@@ -50,7 +50,7 @@ fn metaexpr2code(me: &MetaExpr) -> String {
     }
 }
 
-fn transf2code(expr: &MultiExpr, t2: &crate::parser::expression::ReplTemplate) -> String {
+fn transf2code(expr: &MultiExpr, t2: &ReplTemplate) -> String {
     format!(
         "transf2!( and!( {} ) , t2rules!({}) )",
         mexpr2code(expr),
@@ -58,34 +58,15 @@ fn transf2code(expr: &MultiExpr, t2: &crate::parser::expression::ReplTemplate) -
     )
 }
 
-fn transf2templ2code(t: &crate::parser::expression::ReplTemplate) -> String {
+fn transf2templ2code(t: &ReplTemplate) -> String {
     use crate::parser::expression::ReplItem;
     t.0.iter().fold("".to_string(), |acc, i| {
         let code = match i {
-            ReplItem::Text(t) => format!(
-                // r#"crate::parser::expression::ReplItem::Text("{}".to_string()), "#,
-                r#"t2_text!("{}"), "#,
-                t
-            ),
-            ReplItem::ByPos(p) => format!(
-                // r#"crate::parser::expression::ReplItem::ByPos({}), "#, p),
-                r#"t2_bypos!("{}"), "#,
-                 p),
-            ReplItem::ByName(p) => format!(
-                // r#"crate::parser::expression::ReplItem::ByName("{}".to_string()), "#,
-                r#"t2_byname!("{}"), "#,
-                p
-            ),
-            ReplItem::ByNameOpt(p) => format!(
-                // r#"crate::parser::expression::ReplItem::ByName("{}".to_string()), "#,
-                r#"t2_byname_opt!("{}"), "#,
-                p
-            ),
-            ReplItem::Function(p) => format!(
-                // r#"crate::parser::expression::ReplItem::Function("{}".to_string()), "#,
-                r#"t2_funct!("{}"), "#,
-                p
-            ),
+            ReplItem::Text(t) => format!(r#"t2_text!("{}"), "#, t),
+            ReplItem::ByPos(p) => format!(r#"t2_bypos!("{}"), "#, p),
+            ReplItem::ByName(p) => format!(r#"t2_byname!("{}"), "#, p),
+            ReplItem::ByNameOpt(p) => format!(r#"t2_byname_opt!("{}"), "#, p),
+            ReplItem::Function(p) => format!(r#"t2_funct!("{}"), "#, p),
         };
         acc.iappend(&code)
     })

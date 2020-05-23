@@ -88,26 +88,26 @@ fn apply_transf2(
     replaced_nodes: &ReplacedNodes,
     replaced: Replaced,
 ) -> Replaced {
+    use crate::parser::expression::ReplItem;
+
     template
         .0
         .iter()
         .fold(replaced, |acc, repl_item| match repl_item {
-            crate::parser::expression::ReplItem::Text(txt) => acc.iappend(txt),
-            crate::parser::expression::ReplItem::ByPos(p) => match replaced_nodes.by_pos.get(*p) {
+            ReplItem::Text(txt) => acc.iappend(txt),
+            ReplItem::ByPos(p) => match replaced_nodes.by_pos.get(*p) {
                 Some(rn) => acc.iappend(&format!("pos<{}/{}>", p, rn.0)),
                 None => acc.iappend(&format!("pos<{}/missing>", p)),
             },
-            crate::parser::expression::ReplItem::ByName(n) => match replaced_nodes.by_name.get(n) {
+            ReplItem::ByName(n) => match replaced_nodes.by_name.get(n) {
                 Some(rn) => acc.iappend(&format!("{}", rn.0)),
                 None => acc.iappend(&format!("name<{}/missing>", n)),
             },
-            crate::parser::expression::ReplItem::ByNameOpt(n) => {
-                match replaced_nodes.by_name.get(n) {
-                    Some(rn) => acc.iappend(&format!("{}", rn.0)),
-                    None => acc,
-                }
-            }
-            crate::parser::expression::ReplItem::Function(f) => acc.iappend(replace_fn(&f)),
+            ReplItem::ByNameOpt(n) => match replaced_nodes.by_name.get(n) {
+                Some(rn) => acc.iappend(&format!("{}", rn.0)),
+                None => acc,
+            },
+            ReplItem::Function(f) => acc.iappend(replace_fn(&f)),
         })
 }
 

@@ -35,6 +35,12 @@ macro_rules! dot {
     }};
 }
 
+macro_rules! eof {
+    () => {{
+        $crate::parser::expression::Expression::Simple($crate::parser::atom::Atom::EOF)
+    }};
+}
+
 macro_rules! ematch {
     (chlist $chars:expr, $(from $from:expr,  to $to:expr),*) => {{
         //use idata::cont::IVec;  //  pending macros by example 2.0

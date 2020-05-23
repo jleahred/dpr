@@ -6,9 +6,11 @@ authors = ["jleahred <jleahred@gmail.com>"]
 license = "GPL-3.0"
 description = "Dynamic parser and replacer. You can define rules at run time. It's possible to use peg format"
 readme = "README.md"
+homepage = "https://github.com/jleahred/dpr"
 repository = "https://github.com/jleahred/dpr"
-keywords = ["parsing", "parser", "dynamic", "peg", "text processing"]
+keywords = ["parsing", "parser", "dynamic", "peg", "compiler"]
 
 [dependencies]
-idata = {git = "https://github.com/jleahred/idata" }
+#idata = {git = "https://github.com/jleahred/idata" }
+idata = "0.1.2"
 im = "14.3.0"

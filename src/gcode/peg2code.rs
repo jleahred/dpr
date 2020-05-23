@@ -142,13 +142,13 @@ pub(crate) fn text_peg2code() -> &'static str {
 
     tmpl_rule       =   "$("          -> $(:none)
                             (
-                                    //  by name optional
+                //  by name optional
                                   '?'  symbol                   ->NAMED_OPT$(:endl)$(symbol)$(:endl)
-                                    //  by name
+                //  by name
                                 /  symbol                       ->NAMED$(:endl)$(symbol)$(:endl)
-                                    //  by pos
-                                /   "."  pos:([0-9]+)           ->POS$(:endl)$(symbol)$(pos)$(:endl)
-                                    //  by function
+                //  by pos
+                                /   "."  pos:([0-9]+)           ->POS$(:endl)$(pos)$(:endl)
+                //  by function
                                 /   ":"  ->$(:none)
                                       fn:((!(")" / eol) .)+)    ->FUNCT$(:endl)$(fn)$(:endl)
                               )
