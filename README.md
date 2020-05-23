@@ -21,8 +21,8 @@ Add to `cargo.toml`
 
 ```toml
 [dependencies]
-# dpr = "0.1.0" soon
-dpr = {git = "https://github.com/jleahred/dpr" }
+dpr = "0.1.0" soon
+# dpr = {git = "https://github.com/jleahred/dpr" }
 ```
 
 Wach examples below
