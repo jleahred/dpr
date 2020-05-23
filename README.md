@@ -21,7 +21,7 @@ Add to `cargo.toml`
 
 ```toml
 [dependencies]
-dpr = "0.1.0" soon
+dpr = "0.1.0"
 # dpr = {git = "https://github.com/jleahred/dpr" }
 ```
 
@@ -40,7 +40,6 @@ Wach examples below
     pub(crate)struct Transf2Expr {
         pub(crate)mexpr: MultiExpr,
 * remove and or multiexpr when only one option  (and/or)
-* Upload to `crates`
 
 ## About
 
@@ -74,7 +73,7 @@ Output:
     AAAcBBABdef
 ```
 
-Addition example
+Addition calculator example
 
 Peg:
 ```text
