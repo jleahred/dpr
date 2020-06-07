@@ -16,7 +16,7 @@ impl ReplacedNodes {
     }
 
     fn process_node(mut self, node: &Node) -> Result<Self, String> {
-        let node_replaced = replace(node)?;
+        let node_replaced = replace(node, None)?;
         match node {
             Node::Named((name, _nodes)) => {
                 self.by_pos.push(node_replaced.clone());
@@ -32,8 +32,11 @@ impl ReplacedNodes {
     }
 }
 
-pub(crate) fn replace(ast: &Node) -> Result<Replaced, String> {
-    Ok(rec_replace(ast, Replaced("".to_string()))?)
+pub(crate) fn replace(
+    ast: &Node,
+    fcallback: Option<&crate::FnCallBack>,
+) -> Result<Replaced, String> {
+    Ok(rec_replace(ast, fcallback, Replaced("".to_string()))?)
 }
 
 /// Replaced result
@@ -49,27 +52,36 @@ impl Replaced {
     }
 }
 
-fn rec_replace(ast: &Node, repl: Replaced) -> Result<Replaced, String> {
+fn rec_replace(
+    ast: &Node,
+    fcallback: Option<&crate::FnCallBack>,
+    repl: Replaced,
+) -> Result<Replaced, String> {
     match ast {
         Node::EOF => Ok(repl),
         Node::Val(s) => Ok(repl.iappend(s)),
-        Node::Named((_, nodes)) => rec_replace_nodes(nodes, repl),
+        Node::Named((_, nodes)) => rec_replace_nodes(nodes, fcallback, repl),
         Node::Transf2(crate::ast::Transf2 { template, nodes }) => {
-            rec_transf2_nodes(nodes, template, repl)
+            rec_transf2_nodes(nodes, fcallback, template, repl)
         }
-        Node::Rule((_, nodes)) => rec_replace_nodes(nodes, repl),
+        Node::Rule((_, nodes)) => rec_replace_nodes(nodes, fcallback, repl),
     }
 }
 
-fn rec_replace_nodes(nodes: &[Node], repl: Replaced) -> Result<Replaced, String> {
+fn rec_replace_nodes(
+    nodes: &[Node],
+    fcallback: Option<&crate::FnCallBack>,
+    repl: Replaced,
+) -> Result<Replaced, String> {
     nodes.iter().fold(Ok(repl), |acc, node| match acc {
-        Ok(repl) => rec_replace(node, repl),
+        Ok(repl) => rec_replace(node, fcallback, repl),
         Err(e) => Err(e),
     })
 }
 
 fn rec_transf2_nodes(
     nodes: &[Node],
+    fcallback: Option<&crate::FnCallBack>,
     template: &crate::parser::expression::ReplTemplate,
     repl: Replaced,
 ) -> Result<Replaced, String> {
@@ -77,13 +89,14 @@ fn rec_transf2_nodes(
         let replaced_nodes = nodes.iter().fold(Ok(ReplacedNodes::new()), |acc, node| {
             acc?.process_node(node)
         })?;
-        Ok(apply_transf2(template, &replaced_nodes, repl))
+        Ok(apply_transf2(fcallback, template, &replaced_nodes, repl))
     } else {
         Ok(repl)
     }
 }
 
 fn apply_transf2(
+    fcallback: Option<&crate::FnCallBack>,
     template: &crate::parser::expression::ReplTemplate,
     replaced_nodes: &ReplacedNodes,
     replaced: Replaced,
@@ -107,19 +120,30 @@ fn apply_transf2(
                 Some(rn) => acc.iappend(&format!("{}", rn.0)),
                 None => acc,
             },
-            ReplItem::Function(f) => acc.iappend(replace_fn(&f)),
+            ReplItem::Function(f) => acc.iappend(&replace_fn(&f, fcallback)),
         })
 }
 
-fn replace_fn(fn_name: &str) -> &str {
+fn replace_fn(fn_name: &str, fcallback: Option<&crate::FnCallBack>) -> String {
+    if let Some(fc) = fcallback {
+        match fc.0(fn_name) {
+            Some(replaced) => replaced,
+            None => replace_internal_fn(fn_name),
+        }
+    } else {
+        replace_internal_fn(fn_name)
+    }
+}
+
+fn replace_internal_fn(fn_name: &str) -> String {
     match fn_name {
-        "none" => "",
-        "endl" => "\n",
-        "spc" => " ",
-        "_" => " ",
-        "tab" => "\t",
-        "(" => "\t",
+        "none" => "".to_string(),
+        "endl" => "\n".to_string(),
+        "spc" => " ".to_string(),
+        "_" => " ".to_string(),
+        "tab" => "\t".to_string(),
+        "(" => "(".to_string(),
         // "now" => " ",
-        _ => "?unknown_fn?",
+        _ => format!("?unknown_fn?<{}>", fn_name),
     }
 }

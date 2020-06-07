@@ -66,7 +66,7 @@ pub struct Peg<'a>(&'a str);
 #[derive(Debug)]
 pub enum Error {
     /// error on parsing
-    PaserErr(crate::parser::Error),
+    ParserErr(crate::parser::Error),
     /// error on replace
     ReplaceErr(String),
     /// error processing IR
@@ -83,7 +83,7 @@ impl<'a> Peg<'a> {
     pub fn gen_rules(&self) -> result::Result<crate::parser::expression::SetOfRules, Error> {
         use crate::ir::IR;
 
-        let irtxt = crate::rules_for_peg::rules().parse(self.0)?.replace()?;
+        let irtxt = crate::rules_for_peg::rules().parse(self.0)?.replace(None)?;
         let ir = IR::new(&irtxt.str());
 
         Ok(ir.get_rules().unwrap())
@@ -93,12 +93,12 @@ impl<'a> Peg<'a> {
 impl crate::parser::expression::SetOfRules {
     /// parse from a set of rules (fluent API)
     pub fn parse(&self, text: &str) -> Result<ast::Node, Error> {
-        crate::parse(text, self).map_err(|e| Error::PaserErr(e))
+        crate::parse(text, self).map_err(|e| Error::ParserErr(e))
     }
 
     /// parse with debug info
     pub fn parse_debug(&self, text: &str) -> Result<ast::Node, Error> {
-        crate::parse_debug(text, self).map_err(|e| Error::PaserErr(e))
+        crate::parse_debug(text, self).map_err(|e| Error::ParserErr(e))
     }
 }
 
@@ -120,7 +120,7 @@ pub fn print_rules2parse_peg2() {
     let irtxt = crate::rules_for_peg::rules()
         .parse(gcode::peg2code::text_peg2code())
         .unwrap()
-        .replace()
+        .replace(None)
         .unwrap();
     let ir = IR::new(&irtxt.str());
 
@@ -132,10 +132,16 @@ pub fn print_rules2parse_peg2() {
     println!("{}", r);
 }
 
+/// Type to user defined funtions callbacks
+pub struct FnCallBack(pub fn(&str) -> Option<String>);
+
 impl ast::Node {
     /// run the tree replacing acording the rules
-    pub fn replace(&self) -> Result<crate::ast::replace::Replaced, Error> {
-        ast::replace::replace(&self).map_err(|e| Error::ReplaceErr(e))
+    pub fn replace(
+        &self,
+        fcallback: Option<&FnCallBack>,
+    ) -> Result<crate::ast::replace::Replaced, Error> {
+        ast::replace::replace(&self, fcallback).map_err(|e| Error::ReplaceErr(e))
     }
 }
 

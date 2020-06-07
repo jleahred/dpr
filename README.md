@@ -460,6 +460,40 @@ Example
                     (op  expr)?    -> $(.2)EXEC $(.1)$(:endl)
 ```
 
+You can define your own `functions` (aka `external functions`)
+
+In next example we created the replacement token `el`
+
+```cpp
+fn main() -> Result<(), dpr::Error> {
+    let result = dpr::Peg::new(
+        "
+        main    =   char+
+        char    =   'a'     -> $(:el)A
+                /   'b'     -> $(:el)B
+                /   ch:.    -> $(:el)$(ch)
+    ",
+    )
+    .gen_rules()?
+    .parse("aaacbbabdef")?
+    .replace(Some(&dpr::FnCallBack(custom_funtions)))?
+    //  ...
+    ;
+
+    println!("{:#?}", result);
+    println!("{}", result.str());
+    Ok(())
+}
+
+fn custom_funtions(fn_txt: &str) -> Option<String> {
+    match fn_txt {
+        "el" => Some("\n".to_string()),
+        _ => None,
+    }
+}
+```
+
+
 ## Full math expresion compiler example
 
 What is a parser without an math expresion calculator?
