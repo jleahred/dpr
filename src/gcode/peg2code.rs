@@ -20,7 +20,7 @@ pub(crate) fn text_peg2code() -> &'static str {
 
     symbol          =   [_a-zA-Z0-9] [_'"a-zA-Z0-9]*
 
-    rule            =   _  rule_name  _  '='  _  expr  _eol _       -> RULE$(:endl)$(rule_name)$(:endl)$(expr)
+    rule            =   _  rule_name  _  '='  _  expr   _eol _       -> RULE$(:endl)$(rule_name)$(:endl)$(expr)
 
     rule_name       =   symbol
 
@@ -136,7 +136,12 @@ pub(crate) fn text_peg2code() -> &'static str {
                         transf_rule         -> $(transf_rule)
                         &eol
 
-    transf_rule     =   ( tmpl_text  /  tmpl_rule )+
+    transf_rule     =   ( 
+                           //  remove traililng spaces on transf rules
+                           " "+  &eol                            -> $(:none)
+                        /  tmpl_text  
+                        /  tmpl_rule 
+                        )+
 
     tmpl_text       =   t:( (!("$(" / eol) .)+ )                -> TEXT$(:endl)$(t)$(:endl)
 

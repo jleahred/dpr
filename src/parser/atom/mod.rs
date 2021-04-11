@@ -90,9 +90,8 @@ macro_rules! ok {
 
 fn parse_literal<'a>(mut status: Status<'a>, literal: &'a str) -> Result<'a> {
     for ch in literal.chars() {
-        status = parse_char(status, ch).map_err(|st| {
-            Error::from_status_normal(&st, &format!("expected literal: <{}>", literal))
-        })?;
+        status = parse_char(status, ch)
+            .map_err(|st| Error::from_status_normal(&st, &format!("unexpected string")))?;
     }
     ok!(status, literal)
 }
